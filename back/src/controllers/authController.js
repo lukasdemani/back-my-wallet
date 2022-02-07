@@ -11,13 +11,14 @@ export async function signUp(req, res) {
   console.log(user)
 
   user.name = stripHtml(user.name).result.trim();
+  user.email = stripHtml(user.email).result.trim();
 
   try {
     const usersCollection = db.collection("users");
-    // const messagesCollection = db.collection("messages");
 
-    const existingUser = await usersCollection.findOne({ name: user.name });
-    if (existingUser) {
+    const existingEmail = await usersCollection.findOne({ email: user.email })
+    const passwordError = user.password !== user.passwordTest
+    if (existingEmail || passwordError) {
       return res.sendStatus(409);
     }
 
@@ -44,9 +45,11 @@ export async function signIn(req, res) {
   if (user && bcrypt.compareSync(password, user.password)) {
     const token = uuid();
 
-    await db.collection('sessions').insertOne({ token, userId: user._id });
+    await db.collection('sessions').insertOne({ token, userId: user._id, email });
     const name = user.name;
-    const response = {token, name};
+    const emailResponse = user.email;
+    console.log(emailResponse);
+    const response = {token, name, emailResponse};
     res.send(response);
   } else {
     res.sendStatus(401);
